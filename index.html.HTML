@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Estruturador 6º BPM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        :root { --pm-green: #2e7d32; --pm-blue: #1565c0; --dark-bg: #000000; --card: #111827; --accent: #fbbf24; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--dark-bg); color: white; margin: 0; overflow-x: hidden; }
+        .header { background: #000; padding: 15px; text-align: center; border-bottom: 3px solid var(--pm-green); position: sticky; top: 0; z-index: 1000; }
+        .stepper { display: flex; justify-content: space-around; background: #0a0a0a; padding: 10px 0; border-bottom: 1px solid #334155; }
+        .step { font-size: 0.7rem; color: #64748b; text-align: center; flex: 1; position: relative; }
+        .step.active { color: var(--accent); font-weight: bold; }
+        .step.active::after { content: ''; position: absolute; bottom: -10px; left: 25%; width: 50%; height: 3px; background: var(--accent); }
+        .container { max-width: 600px; margin: auto; padding: 15px; }
+        .app-section { display: none; animation: fadeIn 0.3s ease; }
+        .app-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-vtr { background: var(--card); border: 2px solid #334155; color: white; padding: 20px 10px; border-radius: 12px; text-align: center; cursor: pointer; position: relative; font-size: 0.9rem; }
+        .btn-vtr.active { border-color: var(--accent); background: #1e293b; }
+        .badge-mod { font-size: 0.6rem; background: var(--pm-green); padding: 2px 5px; border-radius: 4px; position: absolute; top: 5px; right: 5px; }
+        .card-sistema { background: #0a0a0a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #334155; }
+        .vtr-conferencia-item { background: #111827; border: 1px solid #334155; border-radius: 10px; padding: 12px; margin-bottom: 15px; }
+        input, textarea { background: #000; color: white; border: 1px solid #444; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 1rem; }
+        .label-campo { font-size: 0.7rem; color: var(--accent); font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        .btn-next { background: var(--pm-green); color: white; width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+        .btn-back { background: #1e293b; color: white; width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h2 style="margin:0; font-size: 1rem;">ESTRUTURADOR MOBILE</h2>
+        <div id="status" style="font-size: 0.6rem; color: #94a3b8;">Conectando...</div>
+    </div>
+
+    <div class="stepper">
+        <div class="step active" id="s1">1. EQUIPES</div>
+        <div class="step" id="s2">2. EFETIVO</div>
+        <div class="step" id="s3">3. RELATO</div>
+    </div>
+
+    <div class="container">
+        <section id="step1" class="app-section active">
+            <button class="btn-back" style="margin-bottom:15px;" onclick="abrirMenuCadastro()">➕ NOVO SETOR</button>
+            <div class="dashboard" id="grade-equipes"></div>
+            <button class="btn-next" onclick="mudarPasso(2)">CONFERIR EFETIVO ➔</button>
+            <button onclick="limparSelecao()" class="btn-back" style="color: #ef4444;">Limpar Seleção</button>
+        </section>
+
+        <section id="step2" class="app-section">
+            <div id="lista-conferencia"></div>
+            <button class="btn-next" id="btnSalvarGeral" onclick="salvarAlteracaoNuvemETirarPasso()">SALVAR E CONTINUAR ➔</button>
+            <button class="btn-back" onclick="mudarPasso(1)">⬅ VOLTAR</button>
+        </section>
+
+        <section id="step3" class="app-section">
+            <div class="card-sistema">
+                <label class="label-campo">Modalidade</label>
+                <input type="text" id="modalidade-final">
+
+                <div style="margin-top:15px; border: 2px dashed #334155; padding: 15px; border-radius: 10px; text-align: center; background: #111827;">
+                    <label class="label-campo">📄 Importar PDF do Boletim</label>
+                    <input type="file" id="input-file" accept=".pdf,.txt" style="display: none;" onchange="importarArquivo(this)">
+                    <button onclick="document.getElementById('input-file').click()" style="background: var(--pm-blue); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer;">📂 ABRIR ARQUIVO</button>
+                    <p id="file-info" style="font-size: 0.6rem; color: #94a3b8; margin-top: 8px;">Ou cole o texto abaixo</p>
+                </div>
+
+                <textarea id="relato-bruto" rows="6" style="margin-top:15px;" placeholder="Relato bruto..."></textarea>
+
+                <button onclick="limparTextoBruto()" style="background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; width: 100%; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-top: 10px;">🗑️ LIMPAR TEXTO</button>
+
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="btn-next" id="btnGerar" onclick="gerarRelatorioIA()" style="flex:2">✨ GERAR IA</button>
+                    <button class="btn-next" onclick="gerarManual()" style="flex:1; background:#475569; font-size:0.8rem">⌨️ MANUAL</button>
+                </div>
+                <button class="btn-back" onclick="mudarPasso(2)">⬅ VOLTAR</button>
+            </div>
+
+            <div id="resultado" class="card-sistema" style="display:none; border-color: var(--accent);">
+                <textarea id="texto-final" rows="12"></textarea>
+                <button class="btn-next" style="background: var(--pm-blue);" onclick="copiar()"> 📤 ENVIAR PARA WHATSAPP</button>
+                <p onclick="gerarRelatorioIA()" style="text-align:center; color:var(--accent); font-size:0.7rem; margin-top:10px; cursor:pointer">🔄 Tentar novamente com IA</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzlOwvTgdXhgFdPuLUXP_Of0pFM1m4A4h-ajVpVh4hIH4ocEcFJVb5N3TO_4CyV82dyXw/exec";
+        const API_IA = "AIzaSyBvjQfsVXTUpzllVbFYb5eNUHQLn9O75H0";
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        let db = {};
+        let selecionadas = [];
+
+        function vibrar(s) { if (navigator.vibrate) navigator.vibrate(s === 'sucesso' ? [100, 50, 100] : 10); }
+
+        function salvarEstado() {
+            const est = { sel: selecionadas, rb: document.getElementById('relato-bruto').value, mod: document.getElementById('modalidade-final').value };
+            localStorage.setItem('pmpr_v1', JSON.stringify(est));
+        }
+
+        async function carregarDados() {
+            try {
+                const r = await fetch(URL_APPS_SCRIPT);
+                db = await r.json();
+                renderizarBotoes();
+                const salvo = localStorage.getItem('pmpr_v1');
+                if (salvo) {
+                    const e = JSON.parse(salvo);
+                    selecionadas = e.sel || [];
+                    document.getElementById('relato-bruto').value = e.rb || "";
+                    document.getElementById('modalidade-final').value = e.mod || "";
+                    renderizarBotoes(); renderizarConferencia();
+                }
+                document.getElementById('status').innerText = "✅ ONLINE";
+            } catch (e) { document.getElementById('status').innerText = "❌ ERRO"; }
+        }
+
+        function renderizarBotoes() {
+            const g = document.getElementById('grade-equipes'); g.innerHTML = "";
+            Object.keys(db).sort().forEach(n => {
+                const is = selecionadas.indexOf(n);
+                const b = document.createElement('div');
+                b.className = 'btn-vtr' + (is > -1 ? ' active' : '');
+                b.innerHTML = `${is > -1 ? `<span style="position:absolute;left:5px;top:5px;background:white;color:black;border-radius:50%;width:18px;height:18px;font-size:12px;display:flex;align-items:center;justify-content:center">${is + 1}</span>` : ''}<span class="badge-mod">${db[n].modalidade}</span>🚔<br>${n}`;
+                b.onclick = () => { vibrar(); const i = selecionadas.indexOf(n); if (i > -1) selecionadas.splice(i, 1); else selecionadas.push(n); renderizarBotoes(); renderizarConferencia(); atualizarModalidade(); salvarEstado(); };
+                g.appendChild(b);
+            });
+        }
+
+        function atualizarModalidade() {
+            const m = selecionadas.map(n => db[n].modalidade);
+            document.getElementById('modalidade-final').value = [...new Set(m)].join("/");
+        }
+
+        function mudarPasso(p) {
+            document.querySelectorAll('.app-section, .step').forEach(x => x.classList.remove('active'));
+            document.getElementById('step' + p).classList.add('active');
+            document.getElementById('s' + p).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function criarLinha(g = '', n = '') {
+            const d = document.createElement('div'); d.className = 'pol-row'; d.style = 'display:flex;gap:5px;margin-bottom:8px';
+            d.innerHTML = `<input type="text" class="edit-g" style="width:70px" value="${g}"> <input type="text" class="edit-n" style="flex:1" value="${n}"> <button onclick="this.parentElement.remove();salvarEstado()" style="color:red;background:none;border:none">✕</button>`;
+            return d;
+        }
+
+        function renderizarConferencia() {
+            const c = document.getElementById('lista-conferencia'); c.innerHTML = "";
+            selecionadas.forEach((n, i) => {
+                const b = document.createElement('div'); b.className = "vtr-conferencia-item";
+                const id = `c-${i}`;
+                b.innerHTML = `<div style="display:flex;justify-content:space-between"><strong>${n}</strong><input type="text" value="${db[n].modalidade}" class="edit-mod-inline" style="width:80px"></div><div id="${id}" data-vtr="${n}"></div><button onclick="document.getElementById('${id}').appendChild(criarLinha())" style="width:100%;margin-top:10px;padding:5px">➕ POLICIAL</button>`;
+                const r = b.querySelector(`#${id}`);
+                (db[n].policiais || [{ g: '', n: '' }]).forEach(p => r.appendChild(criarLinha(p.g, p.n)));
+                c.appendChild(b);
+            });
+        }
+
+        async function salvarAlteracaoNuvemETirarPasso() {
+            vibrar(); document.getElementById('btnSalvarGeral').innerText = "⏳ SALVANDO...";
+            document.querySelectorAll('[data-vtr]').forEach(item => {
+                const n = item.dataset.vtr;
+                const pols = [];
+                item.querySelectorAll('.pol-row').forEach(r => {
+                    const g = r.querySelector('.edit-g').value;
+                    const n_ = r.querySelector('.edit-n').value;
+                    if (g || n_) pols.push({ g, n: n_ });
+                });
+                db[n].policiais = pols;
+            });
+            await fetch(URL_APPS_SCRIPT, { method: 'POST', mode: 'no-cors', body: JSON.stringify(db) });
+            document.getElementById('btnSalvarGeral').innerText = "SALVAR E CONTINUAR ➔";
+            mudarPasso(3);
+        }
+
+        async function importarArquivo(input) {
+            const file = input.files[0]; if (!file) return;
+            document.getElementById('file-info').innerText = "⏳ Lendo...";
+            const reader = new FileReader();
+            if (file.type === "application/pdf") {
+                reader.onload = async function () {
+                    const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
+                    let t = "";
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const p = await pdf.getPage(i);
+                        const c = await p.getTextContent();
+                        t += c.items.map(item => item.str).join(" ") + "\n";
+                    }
+                    document.getElementById('relato-bruto').value = t.replace(/\s+/g, ' ');
+                    document.getElementById('file-info').innerText = "✅ Sucesso!"; salvarEstado();
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.onload = function () { document.getElementById('relato-bruto').value = this.result; salvarEstado(); };
+                reader.readAsText(file);
+            }
+        }
+
+        function gerarManual() {
+            const mod = document.getElementById('modalidade-final').value;
+            let eqs = "";
+            selecionadas.forEach(v => { eqs += `*Equipe*: ${v}\n`; db[v].policiais.forEach(p => eqs += ` - ${p.g} ${p.n}\n`); eqs += "\n"; });
+            document.getElementById('texto-final').value = `*PMPR*\n*5º CRPM*\n*6º BPM*\n*${mod}*\n\n${eqs}*Natureza:*\n*Local:*`;
+            document.getElementById('resultado').style.display = "block";
+        }
+
+        async function gerarRelatorioIA() {
+            const rb = document.getElementById('relato-bruto').value;
+            if (!rb) return alert("Sem texto para processar!");
+
+            const btn = document.getElementById('btnGerar');
+            btn.innerText = "⏳ PROCESSANDO...";
+            btn.disabled = true;
+
+            let txtEquipesFormatado = "";
+            selecionadas.forEach((vtr, index) => {
+                txtEquipesFormatado += `*Equipe*: ${vtr}\n`;
+                if (db[vtr] && db[vtr].policiais) {
+                    db[vtr].policiais.forEach(p => {
+                        if (p.g || p.n) txtEquipesFormatado += `- ${p.g} ${p.n}\n`;
+                    });
+                }
+                txtEquipesFormatado += "\n";
+            });
+
+            const prompt = `Aja como um redator técnico da PMPR. 
+            REGRAS OBRIGATÓRIAS:
+            1. NÃO use espaços, recuos ou TABS no início das linhas. Escreva tudo colado à esquerda.
+            2. MANTENHA EXATAMENTE a lista de equipes e policiais fornecida abaixo.
+            3. Responda APENAS o relatório formatado, sem introduções.
+
+            MODELO DE SAÍDA:
+            *PMPR*
+            *5º CRPM*
+            *6º BPM*
+            *${document.getElementById('modalidade-final').value}*
+
+            *BOU:* (extrair número)
+            ${txtEquipesFormatado.trim()}
+
+            *Natureza:* (extrair e deixar apenas a primeira letra em caixa alta)
+
+            *Data
+            *Hora aproximada:* (00h00min)
+            *Local:* (extrair e deixar apenas a primeira letra em caixa alta, retirar numero)
+
+            *Relato:* (resumo técnico curto sem perder informações relevantes, sem nomes de civis ou placas de veiculos)
+
+            *Resultados:*
+
+            ✅ (resultado 1)
+            ✅ (resultado 2)
+
+            *Polícia Militar do Paraná: Nós fazemos a diferença!*
+
+            TEXTO DO BOLETIM PARA PROCESSAR:
+            ${rb}`;
+
+            try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_IA}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const d = await r.json();
+
+                if (d.candidates && d.candidates[0].content.parts[0].text) {
+                    let textoFinal = d.candidates[0].content.parts[0].text.trim();
+                    textoFinal = textoFinal.replace(/^[ \t]+/gm, '');
+
+                    document.getElementById('texto-final').value = textoFinal;
+                    document.getElementById('resultado').style.display = "block";
+                    btn.innerText = "✨ GERAR COM IA";
+                    btn.disabled = false;
+                    vibrar('sucesso');
+                } else {
+                    throw new Error("Resposta inválida da IA");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao processar com IA. Verifique sua conexão ou chave de API.");
+                btn.disabled = false;
+                btn.innerText = "✨ GERAR COM IA";
+            }
+        }
+
+        function limparTextoBruto() {
+            if (confirm("Limpar?")) {
+                document.getElementById('relato-bruto').value = "";
+                document.getElementById('resultado').style.display = "none"; salvarEstado();
+            }
+        }
+
+        function limparSelecao() {
+            if (confirm("Limpar tudo?")) {
+                selecionadas = []; localStorage.clear(); location.reload();
+            }
+        }
+
+        function copiar() {
+    vibrar('sucesso');
+    const texto = document.getElementById('texto-final').value;
+
+    if (!texto) {
+        alert("Não há texto para enviar!");
+        return;
+    }
+
+    // Codifica o texto para o formato de URL (transforma espaços e quebras de linha em códigos)
+    const textoCodificado = encodeURIComponent(texto);
+    
+    // Cria o link do WhatsApp (api.whatsapp.com funciona em PC e Celular)
+    const linkWhatsapp = `https://api.whatsapp.com/send?text=${textoCodificado}`;
+
+    // Abre o WhatsApp em uma nova aba/janela
+    window.open(linkWhatsapp, '_blank');
+}
+
+        window.onload = carregarDados;
+    </script>
+</body>
+
+</html>

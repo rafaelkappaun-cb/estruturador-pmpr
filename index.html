@@ -104,21 +104,29 @@
         }
 
         async function carregarDados() {
-            try {
-                const r = await fetch(URL_APPS_SCRIPT);
-                db = await r.json();
-                renderizarBotoes();
-                const salvo = localStorage.getItem('pmpr_v1');
-                if (salvo) {
-                    const e = JSON.parse(salvo);
-                    selecionadas = e.sel || [];
-                    document.getElementById('relato-bruto').value = e.rb || "";
-                    document.getElementById('modalidade-final').value = e.mod || "";
-                    renderizarBotoes(); renderizarConferencia();
-                }
-                document.getElementById('status').innerText = "✅ ONLINE";
-            } catch (e) { document.getElementById('status').innerText = "❌ ERRO"; }
+    try {
+        const r = await fetch(URL_APPS_SCRIPT);
+        const texto = await r.text(); // Primeiro lemos como texto para evitar erros
+        db = JSON.parse(texto); // Depois transformamos em objeto
+        
+        renderizarBotoes(); // Mostra as equipes na tela
+        
+        // Tenta recuperar o que o policial já tinha selecionado antes
+        const salvo = localStorage.getItem('pmpr_v1');
+        if(salvo) {
+            const e = JSON.parse(salvo);
+            selecionadas = e.sel || [];
+            document.getElementById('relato-bruto').value = e.rb || "";
+            document.getElementById('modalidade-final').value = e.mod || "";
+            renderizarBotoes(); 
+            renderizarConferencia();
         }
+        document.getElementById('status').innerText = "✅ ONLINE";
+    } catch(e) { 
+        console.error("Erro ao carregar:", e);
+        document.getElementById('status').innerText = "❌ ERRO DE DADOS"; 
+    }
+}
 
         function renderizarBotoes() {
             const g = document.getElementById('grade-equipes'); g.innerHTML = "";
@@ -328,4 +336,5 @@
 </body>
 
 </html>
+
 

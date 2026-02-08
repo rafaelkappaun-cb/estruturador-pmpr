@@ -105,13 +105,22 @@
 
         async function carregarDados() {
     try {
-        const r = await fetch(URL_APPS_SCRIPT);
-        const texto = await r.text(); // Primeiro lemos como texto para evitar erros
-        db = JSON.parse(texto); // Depois transformamos em objeto
+        // Adicionamos um timestamp no final para evitar que o navegador use o cache antigo
+        const r = await fetch(URL_APPS_SCRIPT + "?t=" + new Date().getTime());
         
-        renderizarBotoes(); // Mostra as equipes na tela
+        if (!r.ok) throw new Error('Falha na rede');
         
-        // Tenta recuperar o que o policial já tinha selecionado antes
+        db = await r.json(); // Tenta ler direto como JSON
+        
+        if (Object.keys(db).length > 0) {
+            renderizarBotoes();
+            document.getElementById('status').innerText = "✅ ONLINE";
+            document.getElementById('status').style.color = "#4ade80";
+        } else {
+            document.getElementById('status').innerText = "⚠️ BANCO VAZIO";
+        }
+
+        // Recupera seleção anterior
         const salvo = localStorage.getItem('pmpr_v1');
         if(salvo) {
             const e = JSON.parse(salvo);
@@ -121,10 +130,10 @@
             renderizarBotoes(); 
             renderizarConferencia();
         }
-        document.getElementById('status').innerText = "✅ ONLINE";
     } catch(e) { 
-        console.error("Erro ao carregar:", e);
-        document.getElementById('status').innerText = "❌ ERRO DE DADOS"; 
+        console.error("Erro detalhado:", e);
+        document.getElementById('status').innerText = "❌ ERRO DE CONEXÃO";
+        document.getElementById('status').style.color = "#f87171";
     }
 }
 
@@ -336,5 +345,6 @@
 </body>
 
 </html>
+
 
 
